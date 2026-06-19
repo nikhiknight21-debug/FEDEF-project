@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Records</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero-banner" style="margin-bottom:18px; padding:30px 28px;">
+            <div class="hero-copy">
+                <p class="eyebrow">Records Archive</p>
+                <h1>Saved Behaviour Reports</h1>
+                <p>Review every logged attendance, subject, and behaviour result in one clear table.</p>
+            </div>
+        </header>
+
+        <div class="records-actions">
+            <button onclick="goBack()">Back to Dashboard</button>
+            <button class="compact" onclick="exportPDF()">Export PDF</button>
+            <button class="compact" onclick="exportExcel()">Export Excel</button>
+            <button class="ghost danger" onclick="clearRecords()">Clear All Records</button>
+        </div>
+
+        <div class="card glass-panel">
+            <input id="recordSearch" placeholder="Search records by name, ID, result or subject" oninput="loadRecords()">
+            <div class="table-wrap">
+                <table class="data-table records-table" id="recordsTable">
+                    <thead>
+                        <tr><th>Student ID</th><th>Name</th><th>Attendance %</th><th>Stream</th><th>Subject</th><th>Result</th><th>Time</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        function getRecords() {
+            try { return JSON.parse(localStorage.getItem('records') || '[]'); } catch { return []; }
+        }
+
+        function loadRecords() {
+            const q = (document.getElementById('recordSearch').value || '').trim().toLowerCase();
+            let records = getRecords().slice().reverse();
+            if (q) records = records.filter(r =>
+                (r.name || '').toLowerCase().includes(q) ||
+                (r.studentId || '').toLowerCase().includes(q) ||
+                (r.result || '').toLowerCase().includes(q) ||
+                (r.subject || '').toLowerCase().includes(q));
+
+            const tbody = document.querySelector('#recordsTable tbody');
+            tbody.innerHTML = '';
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty" style="text-align:center;padding:24px;">No records found.</td></tr>';
+                return;
+            }
+            records.forEach(r => {
+                const tr = document.createElement('tr');
+                const time = new Date(r.timestamp).toLocaleString();
+                tr.innerHTML = `<td>${r.studentId || 'N/A'}</td><td>${r.name || ''}</td><td>${r.attendancePercent || 'N/A'}</td><td>${r.stream || 'N/A'}</td><td>${r.subject || 'N/A'}</td><td>${r.result || ''}</td><td>${time}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function goBack() { window.location.href = 'intdex.html'; }
+
+        function clearRecords() {
+            if (!confirm('Clear all saved records?')) return;
+            localStorage.removeItem('records');
+            loadRecords();
+        }
+
+        function exportPDF() {
+            const jsPDF = window.jspdf?.jsPDF;
+            if (!jsPDF) { alert('PDF library not loaded'); return; }
+            const records = getRecords();
+            if (!records.length) { alert('No records to export'); return; }
+            const doc = new jsPDF();
+            doc.setFontSize(14); doc.text('Student Behaviour Records', 10, 14);
+            doc.setFontSize(10);
+            records.slice(-40).forEach((r, i) => {
+                const id = r.studentId ? `${r.studentId} - ` : '';
+                doc.text(`${i + 1}. ${id}${r.name} | ${r.result} | ${r.attendancePercent || 'N/A'}`, 10, 24 + i * 6);
+            });
+            doc.save('behaviour-records.pdf');
+        }
+
+        function exportExcel() {
+            if (!window.XLSX) { alert('Excel library not loaded'); return; }
+            const records = getRecords();
+            if (!records.length) { alert('No records to export'); return; }
+            const ws = XLSX.utils.json_to_sheet(records);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Records');
+            XLSX.writeFile(wb, 'behaviour-records.xlsx');
+        }
+
+        loadRecords();
+    </script>
+</body>
+</html>

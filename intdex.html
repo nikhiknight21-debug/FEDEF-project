@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Behaviour Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="toastHost" class="toast-host"></div>
+
+    <div class="page-shell">
+        <header class="hero-banner">
+            <div class="hero-copy">
+                <p class="eyebrow">Student Behaviour</p>
+                <h1>Behaviour Hub Dashboard</h1>
+                <p>Track attendance, behaviour points, incidents, and progress for every student in one focused workspace.</p>
+            </div>
+            <div class="hero-decor"></div>
+        </header>
+
+        <!-- ===================== AUTH ===================== -->
+        <section class="auth-container" id="authContainer">
+            <div class="auth-box glass-panel">
+                <h2 id="formTitle">Login</h2>
+                <input type="text" id="name" placeholder="Enter Student Name">
+                <input type="email" id="email" placeholder="Enter Email">
+                <input type="password" id="password" placeholder="Enter Password">
+                <button onclick="handleAuth()" id="authBtn">Login</button>
+                <p class="toggle-text" id="toggleText">Don't have an account? <span onclick="toggleForm()">Sign Up</span></p>
+            </div>
+        </section>
+
+        <!-- ===================== MAIN ===================== -->
+        <main class="main-content" id="mainContent">
+            <section class="status-strip">
+                <div>
+                    <h2 id="welcome" class="welcome-text"></h2>
+                    <p class="status-note">Use the tabs below to manage students, behaviour, incidents, and reports.</p>
+                </div>
+                <div class="status-actions">
+                    <select id="roleSelect" onchange="applyRole()" title="Switch dashboard role">
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                        <option value="parent">Parent</option>
+                        <option value="student">Student</option>
+                    </select>
+                    <button id="darkToggleBtn" class="ghost compact" onclick="toggleDarkMode()">Dark Mode</button>
+                    <button class="ghost compact" onclick="logout()">Log out</button>
+                </div>
+            </section>
+
+            <!-- Tab bar -->
+            <nav class="tab-bar" id="tabBar">
+                <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+                <button class="tab-btn" data-tab="students" onclick="switchTab('students')">Students</button>
+                <button class="tab-btn" data-tab="analyze" onclick="switchTab('analyze')">Analyze</button>
+                <button class="tab-btn" data-tab="incidents" onclick="switchTab('incidents')">Incidents</button>
+                <button class="tab-btn" data-tab="records" onclick="switchTab('records')">Records</button>
+                <button class="tab-btn" data-tab="tools" onclick="switchTab('tools')">Tools</button>
+                <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
+            </nav>
+
+            <!-- ===================== OVERVIEW ===================== -->
+            <section class="tab-panel active" id="tab-overview">
+                <div class="kpi-grid">
+                    <div class="kpi glass-panel"><span class="kpi-num" id="kpiStudents">0</span><small>Students</small></div>
+                    <div class="kpi glass-panel"><span class="kpi-num" id="kpiAvgAtt">0%</span><small>Avg attendance</small></div>
+                    <div class="kpi glass-panel"><span class="kpi-num warn" id="kpiRisk">0</span><small>High-risk</small></div>
+                    <div class="kpi glass-panel"><span class="kpi-num" id="kpiIncidents">0</span><small>Open incidents</small></div>
+                </div>
+
+                <div class="cards-grid">
+                    <article class="card summary-card glass-panel">
+                        <h3>Behaviour Summary</h3>
+                        <div class="summary-counters">
+                            <div class="metric"><span id="excellentCount">0</span><small>Excellent</small></div>
+                            <div class="metric"><span id="averageCount">0</span><small>Average</small></div>
+                            <div class="metric"><span id="needsCount">0</span><small>Needs Improve</small></div>
+                        </div>
+                        <div class="summary-bars" id="summaryBars"></div>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>High-Risk Alerts</h3>
+                        <p class="muted">Students below the attendance safety line.</p>
+                        <div id="highRiskList" class="risk-list"></div>
+                    </article>
+
+                    <article class="card timeline-card glass-panel">
+                        <h3>Recent Activity</h3>
+                        <ul id="timelineList" class="timeline-list"></ul>
+                    </article>
+
+                    <article class="card comms-card glass-panel">
+                        <div class="card-header"><h3>Teacher Notes</h3><span class="tag live">Live</span></div>
+                        <div class="message-list">
+                            <div class="message highlight">Focus on consistency, not just one good day.</div>
+                            <div class="message">Reinforce positive habits when attendance is strong.</div>
+                            <div class="message">Log incident actions so they can be shared with parents.</div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ===================== STUDENTS ===================== -->
+            <section class="tab-panel" id="tab-students">
+                <div class="cards-grid wide">
+                    <article class="card glass-panel">
+                        <div class="card-header"><h3>Student Roster</h3><span class="tag" id="rosterCount">0</span></div>
+                        <input id="studentSearch" placeholder="Search by name or ID" oninput="renderRoster()">
+                        <div class="table-wrap">
+                            <table class="data-table" id="rosterTable">
+                                <thead>
+                                    <tr><th>ID</th><th>Name</th><th>Att.</th><th>Stream</th><th>Subject</th><th>Points</th><th></th></tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3 id="studentFormTitle">Add Student</h3>
+                        <input type="hidden" id="editStudentId">
+                        <input id="fStudentName" placeholder="Full name">
+                        <input id="fStudentAtt" placeholder="Attendance e.g. 92%">
+                        <label>Stream</label>
+                        <select id="fStudentStream">
+                            <option value="ECE">ECE</option>
+                            <option value="CSE">CSE</option>
+                        </select>
+                        <label>Subject</label>
+                        <input id="fStudentSubject" placeholder="e.g. DSA-2">
+                        <textarea id="fStudentNotes" placeholder="Notes (optional)"></textarea>
+                        <div class="btn-row">
+                            <button onclick="submitStudent()" id="studentSubmitBtn">Add Student</button>
+                            <button class="ghost" onclick="resetStudentForm()">Clear</button>
+                        </div>
+                    </article>
+                </div>
+
+                <article class="card glass-panel profile-card" id="profileCard" style="display:none;">
+                    <div class="card-header"><h3>Student Profile</h3><button class="ghost compact" onclick="closeProfile()">Close</button></div>
+                    <div id="profileContent"></div>
+                </article>
+            </section>
+
+            <!-- ===================== ANALYZE ===================== -->
+            <section class="tab-panel" id="tab-analyze">
+                <div class="cards-grid">
+                    <article class="card analyse-card glass-panel">
+                        <h3>Quick Behaviour Analysis</h3>
+                        <label>Student (optional)</label>
+                        <select id="analyzeStudent"></select>
+                        <label>Attendance Percentage</label>
+                        <select id="attendancePercent">
+                            <option value="">Select Percentage</option>
+                            <option value="100%">100%</option>
+                            <option value="90-99%">90-99%</option>
+                            <option value="80-89%">80-89%</option>
+                            <option value="70-79%">70-79%</option>
+                            <option value="Below 70%">Below 70%</option>
+                        </select>
+                        <label>Stream</label>
+                        <select id="stream" onchange="updateSubjectOptions()">
+                            <option value="">Select Stream</option>
+                            <option value="ECE">ECE</option>
+                            <option value="CSE">CSE</option>
+                        </select>
+                        <label>Subject</label>
+                        <select id="subject" disabled></select>
+                        <button onclick="checkBehaviour()">Analyze Behaviour</button>
+                        <div id="result" class="result-box"></div>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Subject Attendance</h3>
+                        <p class="muted">Averages pull from the roster and saved records for the chosen stream.</p>
+                        <div id="subjectAttendance" class="subject-attendance"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ===================== INCIDENTS ===================== -->
+            <section class="tab-panel" id="tab-incidents">
+                <div class="cards-grid">
+                    <article class="card incident-card glass-panel">
+                        <div class="card-header"><h3>Log Incident</h3><span class="tag">New</span></div>
+                        <label>Student (optional)</label>
+                        <select id="incidentStudent"></select>
+                        <textarea id="incidentText" placeholder="Describe the incident or behaviour concern..."></textarea>
+                        <label>Severity</label>
+                        <select id="incidentSeverity">
+                            <option value="">Select Severity</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <button onclick="logIncident()">Save Incident</button>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <div class="card-header"><h3>Incident Log</h3>
+                            <select id="incidentFilter" class="inline-select" onchange="renderIncidents()">
+                                <option value="all">All</option>
+                                <option value="open">Open</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="High">High only</option>
+                            </select>
+                        </div>
+                        <ul id="incidentList" class="incident-list"></ul>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ===================== RECORDS ===================== -->
+            <section class="tab-panel" id="tab-records">
+                <article class="card glass-panel">
+                    <div class="card-header"><h3>Saved Behaviour Records</h3><span class="tag" id="recordCount">0</span></div>
+                    <div class="records-toolbar">
+                        <input id="recordSearch" placeholder="Search records" oninput="renderRecordsTable()">
+                        <button class="compact" onclick="exportPDF()">Export PDF</button>
+                        <button class="compact" onclick="exportExcel()">Export Excel</button>
+                        <button class="compact" onclick="exportJSON()">Backup JSON</button>
+                        <button class="compact ghost" onclick="printRecords()">Print</button>
+                        <button class="compact ghost danger admin-only" onclick="clearRecords()">Clear All</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table records-table" id="recordsTable">
+                            <thead>
+                                <tr><th>ID</th><th>Name</th><th>Att. %</th><th>Stream</th><th>Subject</th><th>Result</th><th>Time</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <!-- ===================== TOOLS ===================== -->
+            <section class="tab-panel" id="tab-tools">
+                <div class="cards-grid">
+                    <article class="card glass-panel">
+                        <h3>Event Scheduler</h3>
+                        <input type="date" id="eventDate" />
+                        <input id="eventTitle" placeholder="Event title" />
+                        <button onclick="addEvent()">Add Event</button>
+                        <ul id="eventList" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Parent Contacts</h3>
+                        <input id="parentName" placeholder="Parent name" />
+                        <input id="parentPhone" placeholder="Phone number" />
+                        <button onclick="saveParent()">Save Contact</button>
+                        <ul id="parentList" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Action Items</h3>
+                        <input id="taskInput" placeholder="Add a follow-up task" onkeydown="if(event.key==='Enter') addTask()" />
+                        <button onclick="addTask()">Add Task</button>
+                        <ul id="taskList" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Teacher Feedback</h3>
+                        <textarea id="feedbackInput" placeholder="Write feedback to save..."></textarea>
+                        <button onclick="saveFeedback()">Save Feedback</button>
+                        <ul id="feedbackList" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Compare Students &amp; Entrants</h3>
+                        <p class="muted">Includes roster students and names recorded at entry. Ctrl/Cmd-click to pick two or more.</p>
+                        <select id="compareSelect" multiple size="5"></select>
+                        <button onclick="compareSelected()">Compare</button>
+                        <div id="compareResult" class="compare-result"></div>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <div class="card-header"><h3>Entry Log <span class="tag" id="entryCountWrap">(<span id="entryCount">0</span> names)</span></h3><button class="ghost compact admin-only" onclick="clearEntryLog()">Clear</button></div>
+                        <p class="muted">Every name entered at login is recorded here. Only an admin can remove entries.</p>
+                        <ul id="entryLog" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <div class="card-header"><h3>Notifications</h3><button class="ghost compact admin-only" onclick="clearNotifications()">Clear</button></div>
+                        <ul id="notificationsList" class="mini-list"></ul>
+                    </article>
+
+                    <article class="card chatbot-card glass-panel">
+                        <h3>Assistant Chat</h3>
+                        <div id="chatLog" class="chat-log">No messages yet.</div>
+                        <input id="chatInput" placeholder="Ask the assistant..." onkeydown="if(event.key==='Enter') sendChat()" />
+                        <button onclick="sendChat()">Send</button>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ===================== SETTINGS ===================== -->
+            <section class="tab-panel" id="tab-settings">
+                <div class="cards-grid">
+                    <article class="card glass-panel">
+                        <h3>Appearance & Role</h3>
+                        <label>Dashboard role</label>
+                        <select id="roleSelect2" onchange="applyRole(this.value)">
+                            <option value="teacher">Teacher</option>
+                            <option value="admin">Admin</option>
+                            <option value="parent">Parent</option>
+                            <option value="student">Student</option>
+                        </select>
+                        <p class="muted">Choosing <strong>Admin</strong> asks for a passcode. Only an unlocked Admin can delete students, incidents, records, entry-log names, or reset data.</p>
+                        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Admin Passcode</h3>
+                        <p class="muted">Required to unlock the Admin role. Default is <code>admin123</code> until you change it.</p>
+                        <button class="admin-only" onclick="changeAdminPin()">Change Passcode</button>
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Data Backup & Restore</h3>
+                        <p class="muted">Download a full backup of every student, record, and note, or restore from a backup file.</p>
+                        <button onclick="backupData()">Download Full Backup</button>
+                        <label>Restore from backup</label>
+                        <input type="file" id="restoreFile" accept="application/json" onchange="restoreData(event)">
+                    </article>
+
+                    <article class="card glass-panel">
+                        <h3>Reset</h3>
+                        <p class="muted">Clear all locally stored data. This cannot be undone.</p>
+                        <button class="danger admin-only" onclick="resetAll()">Erase All Data</button>
+                    </article>
+                </div>
+            </section>
+
+            <!-- External libs for export -->
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
